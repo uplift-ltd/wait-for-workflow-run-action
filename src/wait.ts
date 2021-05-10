@@ -1,5 +1,5 @@
 import core from '@actions/core'
-import github from '@actions/github'
+import {getOctokit, context} from '@actions/github'
 import waait from 'waait'
 import {getDependentWorkflows} from './workflows'
 import {getRunsForWorkflowNames} from './runs'
@@ -14,21 +14,21 @@ export async function wait({
   timeout,
   cancelledAsSuccess
 }: Inputs): Promise<Outputs> {
-  const octokit = github.getOctokit(token)
+  const octokit = getOctokit(token)
 
   const {
     data: {workflow_id}
   } = await octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}', {
-    ...github.context.repo,
-    run_id: github.context.runId
+    ...context.repo,
+    run_id: context.runId
   })
 
   if (await shouldCancel({octokit, workflow_id})) {
     await octokit.request(
       'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
       {
-        ...github.context.repo,
-        run_id: github.context.runId
+        ...context.repo,
+        run_id: context.runId
       }
     )
     return {cancelled: true, success: false}
