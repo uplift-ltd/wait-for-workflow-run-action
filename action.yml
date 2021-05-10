@@ -1,11 +1,28 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Wait for Workflow Run'
+description: 'Wait for all workflow_run workflows to be successful'
+author: 'Marius Craciunoiu'
+
 inputs:
-  milliseconds: # change this
-    required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+  github-token:
+    description: GitHub Token
+    default: ${{ github.token }}
+
+  sha:
+    description: SHA to use (defaults to github.sha)
+    default: ${{ github.sha }}
+
+  timeout:
+    description: timeout before we stop trying (in milliseconds) (defaults to 5 minutes)
+    default: 300000
+
+  delay:
+    description: delay between status checks (in milliseconds)
+    default: 5000
+
+  cancelled-as-success:
+    description: count cancelled runs as successful
+    default: false
+
 runs:
-  using: 'node12'
+  using: 'node14'
   main: 'dist/index.js'

@@ -1,16 +1,22 @@
 import * as core from '@actions/core'
+import {Inputs} from './types'
 import {wait} from './wait'
 
 async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
+    const inputs: Inputs = {
+      token: core.getInput('github-token', {required: true}),
+      sha: core.getInput('github-token', {required: true}),
+      delay: Number(core.getInput('delay', {required: false})),
+      timeout: Number(core.getInput('timeout', {required: false})),
+      cancelledAsSuccess:
+        core.getInput('cancelled-as-success', {required: false}) === 'true'
+    }
 
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    const outputs = await wait(inputs)
 
-    core.setOutput('time', new Date().toTimeString())
+    core.setOutput('cancelled', outputs.cancelled)
+    core.setOutput('success', outputs.success)
   } catch (error) {
     core.setFailed(error.message)
   }
