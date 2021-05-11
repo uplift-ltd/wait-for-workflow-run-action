@@ -235,8 +235,7 @@ function wait({ token, sha, delay, timeout, cancelledAsSuccess }) {
     return __awaiter(this, void 0, void 0, function* () {
         const octokit = github.getOctokit(token);
         const { data: { workflow_id } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
-        if ((yield duplicates_1.shouldCancel({ octokit, workflow_id })) &&
-            process.env.NODE_ENV !== 'test') {
+        if (yield duplicates_1.shouldCancel({ octokit, workflow_id })) {
             yield octokit.request('POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
             return { cancelled: true, success: false };
         }

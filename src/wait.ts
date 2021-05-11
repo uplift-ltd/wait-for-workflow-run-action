@@ -23,10 +23,7 @@ export async function wait({
     run_id: github.context.runId
   })
 
-  if (
-    (await shouldCancel({octokit, workflow_id})) &&
-    process.env.NODE_ENV !== 'test'
-  ) {
+  if (await shouldCancel({octokit, workflow_id})) {
     await octokit.request(
       'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
       {
