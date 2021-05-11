@@ -159,6 +159,25 @@ exports.formatRunName = formatRunName;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -174,7 +193,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.wait = void 0;
 const core_1 = __importDefault(__nccwpck_require__(2186));
-const github_1 = __importDefault(__nccwpck_require__(5438));
+const github = __importStar(__nccwpck_require__(5438));
 const waait_1 = __importDefault(__nccwpck_require__(6861));
 const workflows_1 = __nccwpck_require__(2303);
 const runs_1 = __nccwpck_require__(8481);
@@ -182,10 +201,10 @@ const utils_1 = __nccwpck_require__(918);
 const duplicates_1 = __nccwpck_require__(4427);
 function wait({ token, sha, delay, timeout, cancelledAsSuccess }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const octokit = github_1.default.getOctokit(token);
-        const { data: { workflow_id } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}', Object.assign(Object.assign({}, github_1.default.context.repo), { run_id: github_1.default.context.runId }));
+        const octokit = github.getOctokit(token);
+        const { data: { workflow_id } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
         if (yield duplicates_1.shouldCancel({ octokit, workflow_id })) {
-            yield octokit.request('POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel', Object.assign(Object.assign({}, github_1.default.context.repo), { run_id: github_1.default.context.runId }));
+            yield octokit.request('POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
             return { cancelled: true, success: false };
         }
         const workflows = yield workflows_1.getDependentWorkflows({ octokit, workflow_id });
@@ -463,6 +482,7 @@ exports.getInput = getInput;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
+    process.stdout.write(os.EOL);
     command_1.issueCommand('set-output', { name }, value);
 }
 exports.setOutput = setOutput;
