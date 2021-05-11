@@ -42,7 +42,7 @@ function shouldCancel({ octokit, workflow_id }) {
     return __awaiter(this, void 0, void 0, function* () {
         const runs = yield runs_1.getRunsForWorkflow({ octokit, workflow_id });
         core.debug(`Found ${runs.length} run(s) for this workflow.`);
-        const cancel = runs.length >= 1;
+        const cancel = runs.length > 1;
         if (cancel) {
             core.info(`Found other runs for this workflow. Canceling.`);
         }
@@ -236,7 +236,13 @@ function wait({ token, sha, delay, timeout, cancelledAsSuccess }) {
         const octokit = github.getOctokit(token);
         const { data: { workflow_id } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
         if (yield duplicates_1.shouldCancel({ octokit, workflow_id })) {
-            yield octokit.request('POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
+            // await octokit.request(
+            //   'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
+            //   {
+            //     ...github.context.repo,
+            //     run_id: github.context.runId
+            //   }
+            // )
             return { cancelled: true, success: false };
         }
         const workflows = yield workflows_1.getDependentWorkflows({ octokit, workflow_id });

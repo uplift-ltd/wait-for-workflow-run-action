@@ -17,7 +17,7 @@ export async function shouldCancel({
 
   core.debug(`Found ${runs.length} run(s) for this workflow.`)
 
-  const cancel = runs.length >= 1
+  const cancel = runs.length > 1
 
   if (cancel) {
     core.info(`Found other runs for this workflow. Canceling.`)

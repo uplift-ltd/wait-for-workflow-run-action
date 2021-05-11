@@ -24,13 +24,13 @@ export async function wait({
   })
 
   if (await shouldCancel({octokit, workflow_id})) {
-    await octokit.request(
-      'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
-      {
-        ...github.context.repo,
-        run_id: github.context.runId
-      }
-    )
+    // await octokit.request(
+    //   'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
+    //   {
+    //     ...github.context.repo,
+    //     run_id: github.context.runId
+    //   }
+    // )
     return {cancelled: true, success: false}
   }
 
