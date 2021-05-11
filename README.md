@@ -23,7 +23,7 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     outputs:
-      cancelled: ${{ steps.wait.outputs.cancelled }}
+      result: ${{ steps.wait.outputs.result }}
     steps:
       - id: wait
         uses: uplift-ltd/wait-for-workflow-run-action
