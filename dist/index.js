@@ -243,14 +243,14 @@ function wait({ token, sha, cancelWorkflow }) {
             return { result: 'cancelled' };
         }
         const runs = yield runs_1.getRunsForWorkflowNames({ octokit, workflows, sha });
-        if (runs.some(run => run.conclusion === 'failed')) {
-            throw new Error(`Some runs failed: ${runs
+        for (const run of runs) {
+            core.info(`${utils_1.formatRunName(run)}: ${run.conclusion || 'pending'}`);
+        }
+        if (runs.some(run => run.conclusion !== 'success')) {
+            throw new Error(`Some runs didn't succeed: ${runs
                 .filter(run => run.conclusion === 'failed')
                 .map(utils_1.formatRunName)
                 .join(', ')}`);
-        }
-        for (const run of runs) {
-            core.info(`${utils_1.formatRunName(run)}: ${run.conclusion || 'pending'}`);
         }
         return {
             result: 'success'

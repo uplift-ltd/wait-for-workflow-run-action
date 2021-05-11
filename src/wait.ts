@@ -44,17 +44,17 @@ export async function wait({
 
   const runs = await getRunsForWorkflowNames({octokit, workflows, sha})
 
-  if (runs.some(run => run.conclusion === 'failed')) {
+  for (const run of runs) {
+    core.info(`${formatRunName(run)}: ${run.conclusion || 'pending'}`)
+  }
+
+  if (runs.some(run => run.conclusion !== 'success')) {
     throw new Error(
-      `Some runs failed: ${runs
+      `Some runs didn't succeed: ${runs
         .filter(run => run.conclusion === 'failed')
         .map(formatRunName)
         .join(', ')}`
     )
-  }
-
-  for (const run of runs) {
-    core.info(`${formatRunName(run)}: ${run.conclusion || 'pending'}`)
   }
 
   return {
