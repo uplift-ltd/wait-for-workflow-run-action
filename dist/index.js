@@ -94,7 +94,7 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const inputs = {
-                token: core.getInput('github-token', { required: true }),
+                token: core.getInput('token', { required: true }),
                 sha: core.getInput('sha', { required: true }),
                 delay: Number(core.getInput('delay', { required: false })),
                 timeout: Number(core.getInput('timeout', { required: false })),
