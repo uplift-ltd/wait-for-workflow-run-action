@@ -6,6 +6,25 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -15,20 +34,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.shouldCancel = void 0;
-const core_1 = __importDefault(__nccwpck_require__(2186));
+const core = __importStar(__nccwpck_require__(2186));
 const runs_1 = __nccwpck_require__(8481);
 function shouldCancel({ octokit, workflow_id }) {
     return __awaiter(this, void 0, void 0, function* () {
         const runs = yield runs_1.getRunsForWorkflow({ octokit, workflow_id });
-        core_1.default.debug(`Found ${runs.length} run(s) for this workflow.`);
+        core.debug(`Found ${runs.length} run(s) for this workflow.`);
         const cancel = runs.length >= 1;
         if (cancel) {
-            core_1.default.info(`Found other runs for this workflow. Canceling.`);
+            core.info(`Found other runs for this workflow. Canceling.`);
         }
         return cancel;
     });
@@ -208,7 +224,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.wait = void 0;
-const core_1 = __importDefault(__nccwpck_require__(2186));
+const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const waait_1 = __importDefault(__nccwpck_require__(6861));
 const workflows_1 = __nccwpck_require__(2303);
@@ -243,12 +259,12 @@ function wait({ token, sha, delay, timeout, cancelledAsSuccess }) {
                     .map(utils_1.formatRunName)
                     .join(', ')}`);
             }
-            core_1.default.info(`Pending runs. Trying again in: ${delay}ms`);
+            core.info(`Pending runs. Trying again in: ${delay}ms`);
             yield waait_1.default(delay);
             runs = yield runs_1.getRunsForWorkflowNames({ octokit, workflows, sha });
         }
         for (const run of runs) {
-            core_1.default.info(`${utils_1.formatRunName(run)}: ${run.conclusion || 'pending'}`);
+            core.info(`${utils_1.formatRunName(run)}: ${run.conclusion || 'pending'}`);
         }
         return {
             cancelled: false,
@@ -301,7 +317,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getDependentWorkflows = void 0;
 const yaml_1 = __importDefault(__nccwpck_require__(3552));
 const github = __importStar(__nccwpck_require__(5438));
-const core_1 = __importDefault(__nccwpck_require__(2186));
+const core = __importStar(__nccwpck_require__(2186));
 // returns the name of the workflows as defined in the yaml file
 function getDependentWorkflows({ octokit, workflow_id }) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -312,7 +328,7 @@ function getDependentWorkflows({ octokit, workflow_id }) {
         const { content } = fileData;
         // get the workflows out from the file
         const { on: { workflow_run: { workflows } } } = yaml_1.default.parse(Buffer.from(content, 'base64').toString());
-        core_1.default.debug(`workflow dependencies: ${workflows}`);
+        core.debug(`workflow dependencies: ${workflows}`);
         return workflows;
     });
 }
