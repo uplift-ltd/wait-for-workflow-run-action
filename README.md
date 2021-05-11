@@ -38,13 +38,11 @@ jobs:
 
 ## Inputs
 
-| input            | required | default        | description                                                             |
-| ---------------- | -------- | -------------- | ----------------------------------------------------------------------- |
-| `token`          | optional | `github.token` | GitHub token used to call the GitHub API                                |
-| `sha`            | optional | `github.sha`   | commit that the workflows run on.                                       |
-| `timeout`        | optional | `300000`       | timeout before we stop trying (in milliseconds) (defaults to 5 minutes) |
-| `delay`          | optional | `5000`         | delay between status checks (in milliseconds)                           |
-| `cancelWorkflow` | optional | `false`        | cancel workflow instead of just setting output                          |
+| input            | required | default        | description                                    |
+| ---------------- | -------- | -------------- | ---------------------------------------------- |
+| `token`          | optional | `github.token` | GitHub token used to call the GitHub API       |
+| `sha`            | optional | `github.sha`   | commit that the workflows run on.              |
+| `cancelWorkflow` | optional | `false`        | cancel workflow instead of just setting output |
 
 ### Thanks
 

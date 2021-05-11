@@ -1,6 +1,5 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import waait from 'waait'
 import {getDependentWorkflows} from './workflows'
 import {getRunsForWorkflowNames} from './runs'
 import {Inputs, Outputs} from './types'
@@ -10,8 +9,6 @@ import {shouldCancel} from './duplicates'
 export async function wait({
   token,
   sha,
-  delay,
-  timeout,
   cancelWorkflow
 }: Inputs): Promise<Outputs> {
   const octokit = github.getOctokit(token)
@@ -23,7 +20,16 @@ export async function wait({
     run_id: github.context.runId
   })
 
-  if (await shouldCancel({octokit, workflow_id, sha})) {
+  const workflows = await getDependentWorkflows({octokit, workflow_id})
+
+  if (
+    await shouldCancel({
+      octokit,
+      workflow_id,
+      sha,
+      dependentCount: workflows.length
+    })
+  ) {
     if (cancelWorkflow) {
       await octokit.request(
         'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
@@ -36,43 +42,15 @@ export async function wait({
     return {result: 'cancelled'}
   }
 
-  const workflows = await getDependentWorkflows({octokit, workflow_id})
+  const runs = await getRunsForWorkflowNames({octokit, workflows, sha})
 
-  const successfulConclusions = ['success']
-
-  let timer = 0
-  let runs = await getRunsForWorkflowNames({octokit, workflows, sha})
-
-  while (
-    runs.some(
-      run => run.conclusion && !successfulConclusions.includes(run.conclusion)
+  if (runs.some(run => run.conclusion === 'failed')) {
+    throw new Error(
+      `Some runs failed: ${runs
+        .filter(run => run.conclusion === 'failed')
+        .map(formatRunName)
+        .join(', ')}`
     )
-  ) {
-    timer += delay
-
-    if (runs.some(run => run.conclusion === 'failed')) {
-      throw new Error(
-        `Some runs failed: ${runs
-          .filter(run => run.conclusion === 'failed')
-          .map(formatRunName)
-          .join(', ')}`
-      )
-    }
-
-    if (timer >= timeout) {
-      throw new Error(
-        `Timeout reached. Pending runs: ${runs
-          .filter(run => !run.conclusion)
-          .map(formatRunName)
-          .join(', ')}`
-      )
-    }
-
-    core.info(`Pending runs. Trying again in: ${delay}ms`)
-
-    await waait(delay)
-
-    runs = await getRunsForWorkflowNames({octokit, workflows, sha})
   }
 
   for (const run of runs) {

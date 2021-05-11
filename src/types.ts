@@ -6,8 +6,6 @@ export type OctokitInstance = ReturnType<typeof getOctokit>
 export interface Inputs {
   token: string
   sha: string
-  delay: number
-  timeout: number
   cancelWorkflow: boolean
 }
 

@@ -11,14 +11,6 @@ inputs:
     description: SHA to use (defaults to github.sha)
     default: ${{ github.sha }}
 
-  timeout:
-    description: timeout before we stop trying (in milliseconds) (defaults to 5 minutes)
-    default: 300000
-
-  delay:
-    description: delay between status checks (in milliseconds)
-    default: 5000
-
   cancelWorkflow:
     description: cancel workflow instead of just setting output
     default: false

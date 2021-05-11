@@ -6,6 +6,7 @@ interface ShouldCancelOptions {
   octokit: OctokitInstance
   workflow_id: number
   sha: string
+  dependentCount: number
 }
 
 type ShouldCancelResult = boolean
@@ -13,16 +14,19 @@ type ShouldCancelResult = boolean
 export async function shouldCancel({
   octokit,
   workflow_id,
-  sha
+  sha,
+  dependentCount
 }: ShouldCancelOptions): Promise<ShouldCancelResult> {
   const runs = await getRunsForWorkflow({octokit, workflow_id, sha})
 
   core.debug(`Found ${runs.length} run(s) for this workflow.`)
 
-  const cancel = runs.length > 1
+  const cancel = runs.length < dependentCount
 
   if (cancel) {
-    core.info(`Found other runs for this workflow. Canceling.`)
+    core.info(
+      `This is not the last workflow that will be triggered. Cancelling.`
+    )
   }
 
   return cancel

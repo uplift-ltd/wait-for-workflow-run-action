@@ -7,8 +7,6 @@ async function run(): Promise<void> {
     const inputs: Inputs = {
       token: core.getInput('token', {required: true}),
       sha: core.getInput('sha', {required: true}),
-      delay: Number(core.getInput('delay', {required: false})),
-      timeout: Number(core.getInput('timeout', {required: false})),
       cancelWorkflow:
         core.getInput('cancelWorkflow', {required: false}) === 'true'
     }
