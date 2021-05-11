@@ -1,5 +1,5 @@
 import yaml from 'yaml'
-import github from '@actions/github'
+import * as github from '@actions/github'
 import core from '@actions/core'
 import {ContentFile, OctokitInstance} from './types'
 

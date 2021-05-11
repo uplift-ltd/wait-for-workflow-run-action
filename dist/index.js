@@ -103,6 +103,25 @@ run();
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -112,22 +131,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getRunsForWorkflow = exports.getRunsForWorkflowNames = void 0;
-const github_1 = __importDefault(__nccwpck_require__(5438));
+const github = __importStar(__nccwpck_require__(5438));
 function getRunsForWorkflowNames({ octokit, workflows, sha }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { data: { workflow_runs } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/runs', Object.assign({}, github_1.default.context.repo));
+        const { data: { workflow_runs } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/runs', Object.assign({}, github.context.repo));
         return workflow_runs.filter(run => workflows.includes(run.name) && run.head_sha === sha);
     });
 }
 exports.getRunsForWorkflowNames = getRunsForWorkflowNames;
 function getRunsForWorkflow({ octokit, workflow_id }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { data: { workflow_runs } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs', Object.assign(Object.assign({}, github_1.default.context.repo), { workflow_id }));
+        const { data: { workflow_runs } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs', Object.assign(Object.assign({}, github.context.repo), { workflow_id }));
         return workflow_runs;
     });
 }
@@ -250,6 +266,25 @@ exports.wait = wait;
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -265,15 +300,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getDependentWorkflows = void 0;
 const yaml_1 = __importDefault(__nccwpck_require__(3552));
-const github_1 = __importDefault(__nccwpck_require__(5438));
+const github = __importStar(__nccwpck_require__(5438));
 const core_1 = __importDefault(__nccwpck_require__(2186));
 // returns the name of the workflows as defined in the yaml file
 function getDependentWorkflows({ octokit, workflow_id }) {
     return __awaiter(this, void 0, void 0, function* () {
         // get the path to the workflow file
-        const { data: { path } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}', Object.assign(Object.assign({}, github_1.default.context.repo), { workflow_id }));
+        const { data: { path } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}', Object.assign(Object.assign({}, github.context.repo), { workflow_id }));
         // get the workflwo file content
-        const { data: fileData } = yield octokit.request('GET /repos/{owner}/{repo}/contents/{path}', Object.assign(Object.assign({}, github_1.default.context.repo), { ref: github_1.default.context.ref, path }));
+        const { data: fileData } = yield octokit.request('GET /repos/{owner}/{repo}/contents/{path}', Object.assign(Object.assign({}, github.context.repo), { ref: github.context.ref, path }));
         const { content } = fileData;
         // get the workflows out from the file
         const { on: { workflow_run: { workflows } } } = yaml_1.default.parse(Buffer.from(content, 'base64').toString());
