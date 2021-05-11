@@ -38,13 +38,13 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.shouldCancel = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const runs_1 = __nccwpck_require__(8481);
-function shouldCancel({ octokit, workflow_id, sha }) {
+function shouldCancel({ octokit, workflow_id, sha, dependentCount }) {
     return __awaiter(this, void 0, void 0, function* () {
         const runs = yield runs_1.getRunsForWorkflow({ octokit, workflow_id, sha });
         core.debug(`Found ${runs.length} run(s) for this workflow.`);
-        const cancel = runs.length > 1;
+        const cancel = runs.length < dependentCount;
         if (cancel) {
-            core.info(`Found other runs for this workflow. Canceling.`);
+            core.info(`This is not the last workflow that will be triggered. Cancelling.`);
         }
         return cancel;
     });
@@ -96,8 +96,6 @@ function run() {
             const inputs = {
                 token: core.getInput('token', { required: true }),
                 sha: core.getInput('sha', { required: true }),
-                delay: Number(core.getInput('delay', { required: false })),
-                timeout: Number(core.getInput('timeout', { required: false })),
                 cancelWorkflow: core.getInput('cancelWorkflow', { required: false }) === 'true'
             };
             const outputs = yield wait_1.wait(inputs);
@@ -220,49 +218,36 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.wait = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-const waait_1 = __importDefault(__nccwpck_require__(6861));
 const workflows_1 = __nccwpck_require__(2303);
 const runs_1 = __nccwpck_require__(8481);
 const utils_1 = __nccwpck_require__(918);
 const duplicates_1 = __nccwpck_require__(4427);
-function wait({ token, sha, delay, timeout, cancelWorkflow }) {
+function wait({ token, sha, cancelWorkflow }) {
     return __awaiter(this, void 0, void 0, function* () {
         const octokit = github.getOctokit(token);
         const { data: { workflow_id } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
-        if (yield duplicates_1.shouldCancel({ octokit, workflow_id, sha })) {
+        const workflows = yield workflows_1.getDependentWorkflows({ octokit, workflow_id });
+        if (yield duplicates_1.shouldCancel({
+            octokit,
+            workflow_id,
+            sha,
+            dependentCount: workflows.length
+        })) {
             if (cancelWorkflow) {
                 yield octokit.request('POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
             }
             return { result: 'cancelled' };
         }
-        const workflows = yield workflows_1.getDependentWorkflows({ octokit, workflow_id });
-        const successfulConclusions = ['success'];
-        let timer = 0;
-        let runs = yield runs_1.getRunsForWorkflowNames({ octokit, workflows, sha });
-        while (runs.some(run => run.conclusion && !successfulConclusions.includes(run.conclusion))) {
-            timer += delay;
-            if (runs.some(run => run.conclusion === 'failed')) {
-                throw new Error(`Some runs failed: ${runs
-                    .filter(run => run.conclusion === 'failed')
-                    .map(utils_1.formatRunName)
-                    .join(', ')}`);
-            }
-            if (timer >= timeout) {
-                throw new Error(`Timeout reached. Pending runs: ${runs
-                    .filter(run => !run.conclusion)
-                    .map(utils_1.formatRunName)
-                    .join(', ')}`);
-            }
-            core.info(`Pending runs. Trying again in: ${delay}ms`);
-            yield waait_1.default(delay);
-            runs = yield runs_1.getRunsForWorkflowNames({ octokit, workflows, sha });
+        const runs = yield runs_1.getRunsForWorkflowNames({ octokit, workflows, sha });
+        if (runs.some(run => run.conclusion === 'failed')) {
+            throw new Error(`Some runs failed: ${runs
+                .filter(run => run.conclusion === 'failed')
+                .map(utils_1.formatRunName)
+                .join(', ')}`);
         }
         for (const run of runs) {
             core.info(`${utils_1.formatRunName(run)}: ${run.conclusion || 'pending'}`);
@@ -6229,16 +6214,6 @@ function getUserAgent() {
 
 exports.getUserAgent = getUserAgent;
 //# sourceMappingURL=index.js.map
-
-
-/***/ }),
-
-/***/ 6861:
-/***/ ((module) => {
-
-const wait = (amount = 0) => new Promise(resolve => setTimeout(resolve, amount));
-
-module.exports = wait;
 
 
 /***/ }),
