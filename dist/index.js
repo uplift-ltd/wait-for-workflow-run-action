@@ -38,9 +38,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.shouldCancel = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const runs_1 = __nccwpck_require__(8481);
-function shouldCancel({ octokit, workflow_id }) {
+function shouldCancel({ octokit, workflow_id, sha }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const runs = yield runs_1.getRunsForWorkflow({ octokit, workflow_id });
+        const runs = yield runs_1.getRunsForWorkflow({ octokit, workflow_id, sha });
         core.debug(`Found ${runs.length} run(s) for this workflow.`);
         const cancel = runs.length > 1;
         if (cancel) {
@@ -95,16 +95,17 @@ function run() {
         try {
             const inputs = {
                 token: core.getInput('github-token', { required: true }),
-                sha: core.getInput('github-token', { required: true }),
+                sha: core.getInput('sha', { required: true }),
                 delay: Number(core.getInput('delay', { required: false })),
                 timeout: Number(core.getInput('timeout', { required: false })),
-                cancelledAsSuccess: core.getInput('cancelled-as-success', { required: false }) === 'true'
+                cancelWorkflow: core.getInput('cancelWorkflow', { required: false }) === 'true'
             };
             const outputs = yield wait_1.wait(inputs);
-            core.setOutput('cancelled', outputs.cancelled);
-            core.setOutput('success', outputs.success);
+            core.setOutput('result', outputs.result);
         }
         catch (error) {
+            const failedResult = 'failed';
+            core.setOutput('result', failedResult);
             core.setFailed(error.message);
         }
     });
@@ -152,15 +153,15 @@ exports.getRunsForWorkflow = exports.getRunsForWorkflowNames = void 0;
 const github = __importStar(__nccwpck_require__(5438));
 function getRunsForWorkflowNames({ octokit, workflows, sha }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { data: { workflow_runs } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/runs', Object.assign({}, github.context.repo));
+        const { data: { workflow_runs } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/runs', Object.assign(Object.assign({}, github.context.repo), { per_page: 100 }));
         return workflow_runs.filter(run => workflows.includes(run.name) && run.head_sha === sha);
     });
 }
 exports.getRunsForWorkflowNames = getRunsForWorkflowNames;
-function getRunsForWorkflow({ octokit, workflow_id }) {
+function getRunsForWorkflow({ octokit, workflow_id, sha }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { data: { workflow_runs } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs', Object.assign(Object.assign({}, github.context.repo), { workflow_id }));
-        return workflow_runs;
+        const { data: { workflow_runs } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs', Object.assign(Object.assign({}, github.context.repo), { workflow_id, per_page: 100 }));
+        return workflow_runs.filter(run => run.head_sha === sha);
     });
 }
 exports.getRunsForWorkflow = getRunsForWorkflow;
@@ -231,27 +232,21 @@ const workflows_1 = __nccwpck_require__(2303);
 const runs_1 = __nccwpck_require__(8481);
 const utils_1 = __nccwpck_require__(918);
 const duplicates_1 = __nccwpck_require__(4427);
-function wait({ token, sha, delay, timeout, cancelledAsSuccess }) {
+function wait({ token, sha, delay, timeout, cancelWorkflow }) {
     return __awaiter(this, void 0, void 0, function* () {
         const octokit = github.getOctokit(token);
         const { data: { workflow_id } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
-        if (yield duplicates_1.shouldCancel({ octokit, workflow_id })) {
-            // await octokit.request(
-            //   'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
-            //   {
-            //     ...github.context.repo,
-            //     run_id: github.context.runId
-            //   }
-            // )
-            return { cancelled: true, success: false };
+        if (yield duplicates_1.shouldCancel({ octokit, workflow_id, sha })) {
+            if (cancelWorkflow) {
+                yield octokit.request('POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
+            }
+            return { result: 'cancelled' };
         }
         const workflows = yield workflows_1.getDependentWorkflows({ octokit, workflow_id });
         const successfulConclusions = ['success'];
-        if (cancelledAsSuccess)
-            successfulConclusions.push('cancelled');
         let timer = 0;
         let runs = yield runs_1.getRunsForWorkflowNames({ octokit, workflows, sha });
-        while (runs.find(run => run.conclusion && !successfulConclusions.includes(run.conclusion))) {
+        while (runs.some(run => run.conclusion && !successfulConclusions.includes(run.conclusion))) {
             timer += delay;
             if (runs.some(run => run.conclusion === 'failed')) {
                 throw new Error(`Some runs failed: ${runs
@@ -273,8 +268,7 @@ function wait({ token, sha, delay, timeout, cancelledAsSuccess }) {
             core.info(`${utils_1.formatRunName(run)}: ${run.conclusion || 'pending'}`);
         }
         return {
-            cancelled: false,
-            success: true
+            result: 'success'
         };
     });
 }

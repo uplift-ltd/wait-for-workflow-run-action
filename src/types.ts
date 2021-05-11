@@ -8,12 +8,11 @@ export interface Inputs {
   sha: string
   delay: number
   timeout: number
-  cancelledAsSuccess: boolean
+  cancelWorkflow: boolean
 }
 
 export interface Outputs {
-  cancelled: boolean
-  success: boolean
+  result: 'success' | 'failed' | 'cancelled'
 }
 
 export type WorkflowRun = components['schemas']['workflow-run']

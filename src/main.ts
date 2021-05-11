@@ -1,23 +1,24 @@
 import * as core from '@actions/core'
-import {Inputs} from './types'
+import {Inputs, Outputs} from './types'
 import {wait} from './wait'
 
 async function run(): Promise<void> {
   try {
     const inputs: Inputs = {
-      token: core.getInput('github-token', {required: true}),
-      sha: core.getInput('github-token', {required: true}),
+      token: core.getInput('token', {required: true}),
+      sha: core.getInput('sha', {required: true}),
       delay: Number(core.getInput('delay', {required: false})),
       timeout: Number(core.getInput('timeout', {required: false})),
-      cancelledAsSuccess:
-        core.getInput('cancelled-as-success', {required: false}) === 'true'
+      cancelWorkflow:
+        core.getInput('cancelWorkflow', {required: false}) === 'true'
     }
 
     const outputs = await wait(inputs)
 
-    core.setOutput('cancelled', outputs.cancelled)
-    core.setOutput('success', outputs.success)
+    core.setOutput('result', outputs.result)
   } catch (error) {
+    const failedResult: Outputs['result'] = 'failed'
+    core.setOutput('result', failedResult)
     core.setFailed(error.message)
   }
 }

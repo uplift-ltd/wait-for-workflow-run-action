@@ -3,7 +3,7 @@ description: 'Wait for all workflow_run workflows to be successful'
 author: 'Marius Craciunoiu'
 
 inputs:
-  github-token:
+  token:
     description: GitHub Token
     default: ${{ github.token }}
 
@@ -19,8 +19,8 @@ inputs:
     description: delay between status checks (in milliseconds)
     default: 5000
 
-  cancelled-as-success:
-    description: count cancelled runs as successful
+  cancelWorkflow:
+    description: cancel workflow instead of just setting output
     default: false
 
 runs:

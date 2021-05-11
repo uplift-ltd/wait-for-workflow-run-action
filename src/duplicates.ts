@@ -5,15 +5,17 @@ import {OctokitInstance} from './types'
 interface ShouldCancelOptions {
   octokit: OctokitInstance
   workflow_id: number
+  sha: string
 }
 
 type ShouldCancelResult = boolean
 
 export async function shouldCancel({
   octokit,
-  workflow_id
+  workflow_id,
+  sha
 }: ShouldCancelOptions): Promise<ShouldCancelResult> {
-  const runs = await getRunsForWorkflow({octokit, workflow_id})
+  const runs = await getRunsForWorkflow({octokit, workflow_id, sha})
 
   core.debug(`Found ${runs.length} run(s) for this workflow.`)
 

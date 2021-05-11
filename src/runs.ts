@@ -20,7 +20,8 @@ export async function getRunsForWorkflowNames({
   const {
     data: {workflow_runs}
   } = await octokit.request('GET /repos/{owner}/{repo}/actions/runs', {
-    ...github.context.repo
+    ...github.context.repo,
+    per_page: 100
   })
 
   return workflow_runs.filter(
@@ -34,13 +35,15 @@ export async function getRunsForWorkflowNames({
 interface GetRunsForWorkflowOptions {
   octokit: OctokitInstance
   workflow_id: number
+  sha: string
 }
 
 type GetRunsForWorkflowResult = WorkflowRun[]
 
 export async function getRunsForWorkflow({
   octokit,
-  workflow_id
+  workflow_id,
+  sha
 }: GetRunsForWorkflowOptions): Promise<GetRunsForWorkflowResult> {
   const {
     data: {workflow_runs}
@@ -48,9 +51,10 @@ export async function getRunsForWorkflow({
     'GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs',
     {
       ...github.context.repo,
-      workflow_id
+      workflow_id,
+      per_page: 100
     }
   )
 
-  return workflow_runs
+  return workflow_runs.filter(run => run.head_sha === sha)
 }

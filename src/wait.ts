@@ -12,7 +12,7 @@ export async function wait({
   sha,
   delay,
   timeout,
-  cancelledAsSuccess
+  cancelWorkflow
 }: Inputs): Promise<Outputs> {
   const octokit = github.getOctokit(token)
 
@@ -23,27 +23,28 @@ export async function wait({
     run_id: github.context.runId
   })
 
-  if (await shouldCancel({octokit, workflow_id})) {
-    // await octokit.request(
-    //   'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
-    //   {
-    //     ...github.context.repo,
-    //     run_id: github.context.runId
-    //   }
-    // )
-    return {cancelled: true, success: false}
+  if (await shouldCancel({octokit, workflow_id, sha})) {
+    if (cancelWorkflow) {
+      await octokit.request(
+        'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
+        {
+          ...github.context.repo,
+          run_id: github.context.runId
+        }
+      )
+    }
+    return {result: 'cancelled'}
   }
 
   const workflows = await getDependentWorkflows({octokit, workflow_id})
 
   const successfulConclusions = ['success']
-  if (cancelledAsSuccess) successfulConclusions.push('cancelled')
 
   let timer = 0
   let runs = await getRunsForWorkflowNames({octokit, workflows, sha})
 
   while (
-    runs.find(
+    runs.some(
       run => run.conclusion && !successfulConclusions.includes(run.conclusion)
     )
   ) {
@@ -79,7 +80,6 @@ export async function wait({
   }
 
   return {
-    cancelled: false,
-    success: true
+    result: 'success'
   }
 }
