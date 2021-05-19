@@ -18,6 +18,8 @@ export async function getDependentWorkflows({
   octokit,
   workflow_id
 }: GetDependentWorkflowsOptions): Promise<GetDependentWorkflowsResult> {
+  core.info(`Getting workflow dependencies for workflow ${workflow_id}`)
+
   // get the path to the workflow file
   const {
     data: {path}
@@ -48,7 +50,7 @@ export async function getDependentWorkflows({
     }
   } = yaml.parse(Buffer.from(content, 'base64').toString())
 
-  core.debug(`workflow dependencies: ${workflows}`)
+  core.debug(`Workflow dependencies: ${workflows}`)
 
   return workflows
 }

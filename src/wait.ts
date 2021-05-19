@@ -4,7 +4,8 @@ import {getDependentWorkflows} from './workflows'
 import {getRunsForWorkflowNames} from './runs'
 import {Inputs, Outputs} from './types'
 import {formatRunName} from './utils'
-import {shouldCancel} from './duplicates'
+import {getWillHaveOtherRuns} from './duplicates'
+import {cancelCurrentRun} from './cancel'
 
 export async function wait({
   token,
@@ -12,6 +13,8 @@ export async function wait({
   cancelWorkflow
 }: Inputs): Promise<Outputs> {
   const octokit = github.getOctokit(token)
+
+  core.info(`sha: ${sha}`)
 
   const {
     data: {workflow_id}
@@ -22,22 +25,17 @@ export async function wait({
 
   const workflows = await getDependentWorkflows({octokit, workflow_id})
 
-  if (
-    await shouldCancel({
-      octokit,
-      workflow_id,
-      sha,
-      dependentCount: workflows.length
-    })
-  ) {
+  const willHaveOtherRuns = await getWillHaveOtherRuns({
+    octokit,
+    workflow_id,
+    sha,
+    dependentCount: workflows.length
+  })
+
+  if (willHaveOtherRuns) {
+    core.info(`This is not the last run that will be triggered. Cancelling.`)
     if (cancelWorkflow) {
-      await octokit.request(
-        'POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel',
-        {
-          ...github.context.repo,
-          run_id: github.context.runId
-        }
-      )
+      await cancelCurrentRun({octokit})
     }
     return {result: 'cancelled'}
   }
@@ -46,6 +44,18 @@ export async function wait({
 
   for (const run of runs) {
     core.info(`${formatRunName(run)}: ${run.conclusion || 'pending'}`)
+  }
+
+  const hasPendingRuns = runs.some(run => !run.conclusion)
+
+  if (hasPendingRuns) {
+    core.info(
+      `Some runs are still pending. There should be another run triggered. Cancelling.`
+    )
+    if (cancelWorkflow) {
+      await cancelCurrentRun({octokit})
+    }
+    return {result: 'cancelled'}
   }
 
   if (runs.some(run => run.conclusion !== 'success')) {
