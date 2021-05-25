@@ -46,7 +46,7 @@ export async function wait({
     core.info(`${formatRunName(run)}: ${run.conclusion || 'pending'}`)
   }
 
-  const hasPendingRuns = runs.some(run => !run.conclusion)
+  const hasPendingRuns = runs.some(run => run.status !== 'completed')
 
   if (hasPendingRuns) {
     core.info(

@@ -1,6 +1,52 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 6606:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.cancelCurrentRun = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const github = __importStar(__nccwpck_require__(5438));
+const cancelCurrentRun = ({ octokit }) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info(`Canceling workflow because cancelWorkflow options is enabled.`);
+    yield octokit.request('POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
+});
+exports.cancelCurrentRun = cancelCurrentRun;
+
+
+/***/ }),
+
 /***/ 4427:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -35,21 +81,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.shouldCancel = void 0;
+exports.getWillHaveOtherRuns = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const runs_1 = __nccwpck_require__(8481);
-function shouldCancel({ octokit, workflow_id, sha, dependentCount }) {
+function getWillHaveOtherRuns({ octokit, workflow_id, sha, dependentCount }) {
     return __awaiter(this, void 0, void 0, function* () {
         const runs = yield runs_1.getRunsForWorkflow({ octokit, workflow_id, sha });
-        core.debug(`Found ${runs.length} run(s) for this workflow.`);
-        const cancel = runs.length < dependentCount;
-        if (cancel) {
-            core.info(`This is not the last workflow that will be triggered. Cancelling.`);
-        }
-        return cancel;
+        core.debug(`Found ${runs.length} run(s) for this workflow id (${workflow_id}) and sha (${sha}).`);
+        return runs.length < dependentCount;
     });
 }
-exports.shouldCancel = shouldCancel;
+exports.getWillHaveOtherRuns = getWillHaveOtherRuns;
 
 
 /***/ }),
@@ -226,25 +268,37 @@ const workflows_1 = __nccwpck_require__(2303);
 const runs_1 = __nccwpck_require__(8481);
 const utils_1 = __nccwpck_require__(918);
 const duplicates_1 = __nccwpck_require__(4427);
+const cancel_1 = __nccwpck_require__(6606);
 function wait({ token, sha, cancelWorkflow }) {
     return __awaiter(this, void 0, void 0, function* () {
         const octokit = github.getOctokit(token);
+        core.info(`sha: ${sha}`);
         const { data: { workflow_id } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
         const workflows = yield workflows_1.getDependentWorkflows({ octokit, workflow_id });
-        if (yield duplicates_1.shouldCancel({
+        const willHaveOtherRuns = yield duplicates_1.getWillHaveOtherRuns({
             octokit,
             workflow_id,
             sha,
             dependentCount: workflows.length
-        })) {
+        });
+        if (willHaveOtherRuns) {
+            core.info(`This is not the last run that will be triggered. Cancelling.`);
             if (cancelWorkflow) {
-                yield octokit.request('POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel', Object.assign(Object.assign({}, github.context.repo), { run_id: github.context.runId }));
+                yield cancel_1.cancelCurrentRun({ octokit });
             }
             return { result: 'cancelled' };
         }
         const runs = yield runs_1.getRunsForWorkflowNames({ octokit, workflows, sha });
         for (const run of runs) {
             core.info(`${utils_1.formatRunName(run)}: ${run.conclusion || 'pending'}`);
+        }
+        const hasPendingRuns = runs.some(run => run.status !== 'completed');
+        if (hasPendingRuns) {
+            core.info(`Some runs are still pending. There should be another run triggered. Cancelling.`);
+            if (cancelWorkflow) {
+                yield cancel_1.cancelCurrentRun({ octokit });
+            }
+            return { result: 'cancelled' };
         }
         if (runs.some(run => run.conclusion !== 'success')) {
             throw new Error(`Some runs didn't succeed: ${runs
@@ -306,6 +360,7 @@ const core = __importStar(__nccwpck_require__(2186));
 // returns the name of the workflows as defined in the yaml file
 function getDependentWorkflows({ octokit, workflow_id }) {
     return __awaiter(this, void 0, void 0, function* () {
+        core.info(`Getting workflow dependencies for workflow ${workflow_id}`);
         // get the path to the workflow file
         const { data: { path } } = yield octokit.request('GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}', Object.assign(Object.assign({}, github.context.repo), { workflow_id }));
         // get the workflwo file content
@@ -313,7 +368,7 @@ function getDependentWorkflows({ octokit, workflow_id }) {
         const { content } = fileData;
         // get the workflows out from the file
         const { on: { workflow_run: { workflows } } } = yaml_1.default.parse(Buffer.from(content, 'base64').toString());
-        core.debug(`workflow dependencies: ${workflows}`);
+        core.debug(`Workflow dependencies: ${workflows}`);
         return workflows;
     });
 }
