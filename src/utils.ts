@@ -1,6 +1,6 @@
-import {WorkflowRun} from './types'
+import {OctokitWorkflowRun} from './types'
 
-export function formatRunName(run: WorkflowRun): string {
+export function formatRunName(run: OctokitWorkflowRun): string {
   if (run.name) {
     return `${run.name} (#${run.id})`
   }

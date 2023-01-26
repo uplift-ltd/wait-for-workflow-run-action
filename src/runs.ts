@@ -1,5 +1,5 @@
 import * as github from '@actions/github'
-import {OctokitInstance, WorkflowRun} from './types'
+import type {OctokitInstance, OctokitWorkflowRun} from './types'
 
 /**
  * Get Runs for Worfklows (by name)
@@ -10,7 +10,7 @@ interface GetRunsForWorkflowNamesOptions {
   sha: string
 }
 
-type GetRunsForWorkflowNamesResult = WorkflowRun[]
+type GetRunsForWorkflowNamesResult = OctokitWorkflowRun[]
 
 export async function getRunsForWorkflowNames({
   octokit,
@@ -25,7 +25,7 @@ export async function getRunsForWorkflowNames({
   })
 
   return workflow_runs.filter(
-    run => workflows.includes(run.name) && run.head_sha === sha
+    run => run.name && workflows.includes(run.name) && run.head_sha === sha
   )
 }
 
@@ -38,7 +38,7 @@ interface GetRunsForWorkflowOptions {
   sha: string
 }
 
-type GetRunsForWorkflowResult = WorkflowRun[]
+type GetRunsForWorkflowResult = OctokitWorkflowRun[]
 
 export async function getRunsForWorkflow({
   octokit,
