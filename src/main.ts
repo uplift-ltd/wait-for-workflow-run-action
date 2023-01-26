@@ -14,10 +14,21 @@ async function run(): Promise<void> {
     const outputs = await wait(inputs)
 
     core.setOutput('result', outputs.result)
-  } catch (error) {
+  } catch (err) {
     const failedResult: Outputs['result'] = 'failed'
     core.setOutput('result', failedResult)
-    core.setFailed(error.message)
+
+    if (!(err instanceof Error)) {
+      if (typeof err === 'string') {
+        core.setFailed(err)
+        return
+      }
+
+      core.setFailed('Unknown Error occured')
+      return
+    }
+
+    core.setFailed(err.message)
   }
 }
 
